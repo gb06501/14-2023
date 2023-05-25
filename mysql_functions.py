@@ -357,7 +357,6 @@ def create_mysql_tables(csv_collections):
         # ais_data.truncate_tables procedúra törlése ha már létezne
         cur.execute("DROP PROCEDURE IF EXISTS ais_data.truncate_tables;")
         # a procedúra létrehozása amivel az adatbázis összes tábláját csonkítjuk
-        # https://stackoverflow.com/a/33462820/21931685
         cur.execute("""
             CREATE PROCEDURE ais_data.truncate_tables(mydb VARCHAR(64))
             BEGIN

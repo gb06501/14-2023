@@ -323,7 +323,7 @@ def create_postgres_tables(csv_collections):
 
 
 
-        # https://stackoverflow.com/questions/2829158/truncating-all-tables-in-a-postgres-database/2829485#2829485
+
         cur.execute('''
             CREATE OR REPLACE FUNCTION truncate_tables() RETURNS void AS $$
             -- statements kurzor létrehozása és abban a public sémahoz tartozó tábla nevek tárolása
