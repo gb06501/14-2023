@@ -358,30 +358,36 @@ def create_mysql_tables(csv_collections):
         cur.execute("DROP PROCEDURE IF EXISTS ais_data.truncate_tables;")
         # a procedúra létrehozása amivel az adatbázis összes tábláját csonkítjuk
         cur.execute("""
-            CREATE PROCEDURE ais_data.truncate_tables(mydb VARCHAR(64))
+            CREATE PROCEDURE ais_data.truncate_tables(specified_db VARCHAR(64))
             BEGIN
-                DECLARE tables VARCHAR(64);
-                DECLARE done INT DEFAULT FALSE;
-                DECLARE tcursor CURSOR FOR 
-                    SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema = mydb;
-                DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+                DECLARE tbls VARCHAR(64);
+                DECLARE process_done INT DEFAULT FALSE;
+                -- kurzor létrehozása táblák lekérdezéséhez 
+                DECLARE table_cursor CURSOR FOR 
+                    SELECT table_name FROM information_schema.tables 
+                    WHERE table_type = 'BASE TABLE' AND table_schema = specified_db;
+                -- kezelő létrehozása a nem talált rekordok kezeléséhez 
+                DECLARE CONTINUE HANDLER FOR NOT FOUND SET process_done = TRUE;
+                -- külső kulcsok ellenőrzésének kikapcsolása 
                 SET FOREIGN_KEY_CHECKS = 0;
-                OPEN tcursor;
-                l1: LOOP
-                    FETCH tcursor INTO tables;
-                    IF done THEN
-                        LEAVE l1;
+                OPEN table_cursor;
+                -- táblák bejárása  
+                label1: LOOP
+                    FETCH table_cursor INTO tbls;
+                    IF process_done THEN 
+                        LEAVE label1;
                     END IF;
-                    SET @sql = CONCAT('TRUNCATE TABLE `', mydb, '`.`', tables, '`;');
-                    PREPARE stmt FROM @sql;
-                    EXECUTE stmt;
-                    DEALLOCATE PREPARE stmt;
-                END LOOP l1;
-                CLOSE tcursor;
+                    -- dinamikus SQL parancs létrehozása és végrehajtása
+                    SET @dynamic_sql = CONCAT('TRUNCATE TABLE `', specified_db, '`.`', tbls, '`;');
+                    PREPARE statement FROM @dynamic_sql;
+                    EXECUTE statement;
+                    DEALLOCATE PREPARE statement;
+                END LOOP label1;
+                CLOSE table_cursor;
+                -- külső kulcsok ellenőrzésének visszaállítása
                 SET FOREIGN_KEY_CHECKS = 1;
             END
         """)
-
         print("Creating procedure truncate_tables or not...")
 
         # változtatások kommitálása, kurzor és kapcsolat bezárása
